@@ -28,15 +28,15 @@ Garde un ton direct, dynamique et percutant. Fais très court (< 120 mots).`;
 - Sujet : ${sujet || 'Sujet par défaut'}
 - Style d'accroche (Hook) : ${hookAngle || 'mythe'}`;
 
-    // Utilisation de gemini-2.5-flash avec limite de tokens pour économiser
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+    // Utilisation de gemini-1.5-flash (Ultra rapide, économique et gratuit)
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: userPrompt }] }],
         systemInstruction: { parts: [{ text: systemInstruction }] },
         generationConfig: {
-          maxOutputTokens: 350, // Limite la longueur pour économiser tes crédits/sous !
+          maxOutputTokens: 350, // Bloque la longueur pour préserver ton quota gratuit
           temperature: 0.7
         }
       })
