@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oukifaï — Fiches de tournage virales</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card: #18181b;
+      --border: #27272a;
+      --accent: #f43f5e;
+      --text: #fafafa;
+      --text-muted: #a1a1aa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px 15px; min-height: 100vh; }
+    .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 24px; }
+    
+    header { text-align: center; margin-top: 10px; }
+    h1 { font-size: 1.8rem; font-weight: 800; tracking: -0.02em; }
+    h1 span { color: var(--accent); }
+    p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
+
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    input, select {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 14px; border-radius: 10px; font-size: 1rem; outline: none; transition: 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .option-btn {
+      background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
+      padding: 12px 6px; border-radius: 10px; font-size: 0.75rem; font-weight: 600;
+      text-align: center; cursor: pointer; transition: 0.2s;
+    }
+    .option-btn.active { border-color: var(--accent); color: var(--text); background: #f43f5e15; }
+
+    button.btn-primary {
+      background: var(--accent); color: #fff; border: none; padding: 16px;
+      border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
+      margin-top: 8px; transition: opacity 0.2s;
+    }
+    button.btn-primary:active { opacity: 0.8; }
+
+    #result-area { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 10px; }
+    .script-content { white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5; color: #e4e4e7; }
+    
+    .btn-copy {
+      background: var(--border); color: var(--text); border: none; padding: 12px;
+      border-radius: 8px; width: 100%; font-weight: 600; margin-top: 16px; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>Ouki<span>faï</span></h1>
+    <p class="subtitle">Scripts courts & viraux en 30 secondes</p>
+  </header>
+
+  <div class="form-group">
+    <label>1. Sujet de ta vidéo</label>
+    <input type="text" id="sujet" placeholder="Ex: L'erreur ultime en e-commerce..." required>
+  </div>
+
+  <div class="form-group">
+    <label>2. Angle du Hook</label>
+    <div class="options-grid">
+      <div class="option-btn active" data-value="contrariant">Contrariant</div>
+      <div class="option-btn" data-value="chiffre">Chiffre Choc</div>
+      <div class="option-btn" data-value="fomo">Secret / FOMO</div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>3. Ton de voix</label>
+    <select id="ton">
+      <option value="Direct & Cash">Direct & Cash</option>
+      <option value="Inspirant">Inspirant & Captivant</option>
+      <option value="Éducatif">Pédagoge & Clair</option>
+    </select>
+  </div>
+
+  <button class="btn-primary" id="generate-btn" onclick="generateScript()">⚡ GÉNÉRER MON SCRIPT</button>
+
+  <div id="result-area">
+    <div class="script-content" id="script-output"></div>
+    <button class="btn-copy" onclick="copyScript()">📋 Copier le script</button>
+  </div>
+</div>
+
+<script>
+  let selectedHook = 'contrariant';
+
+  document.querySelectorAll('.option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedHook = btn.dataset.value;
+    });
+  });
+
+  async function generateScript() {
+    const sujet = document.getElementById('sujet').value;
+    const ton = document.getElementById('ton').value;
+    const btn = document.getElementById('generate-btn');
+    const resultArea = document.getElementById('result-area');
+    const scriptOutput = document.getElementById('script-output');
+
+    if (!sujet) return alert("Renseigne au moins le sujet de ta vidéo !");
+
+    btn.innerText = "Génération en cours...";
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sujet, hookAngle: selectedHook, ton })
+      });
+
+      const data = await res.json();
+      scriptOutput.innerText = data.script;
+      resultArea.style.display = 'block';
+    } catch (e) {
+      alert("Une erreur est survenue lors de la génération.");
+    } finally {
+      btn.innerText = "⚡ GÉNÉRER MON SCRIPT";
+      btn.disabled = false;
+    }
+  }
+
+  function copyScript() {
+    const text = document.getElementById('script-output').innerText;
+    navigator.clipboard.writeText(text);
+    alert("Script copié dans le presse-papier ! ✅");
+  }
+</script>
+
+</body>
+</html>
