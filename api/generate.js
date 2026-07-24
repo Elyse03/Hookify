@@ -1,11 +1,23 @@
-export async function POST(req) {
+export default async function handler(req, res) {
+  // Gestion du CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ script: "Méthode non autorisée. Utilise POST." });
+  }
+
   try {
-    const { sujet, hookAngle } = await req.json();
+    const { sujet, hookAngle } = req.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Vérification si la clé existe dans Vercel
     if (!apiKey) {
-      return new Response(JSON.stringify({ script: "Erreur : La clé GEMINI_API_KEY n'est pas configurée dans Vercel." }), { status: 500 });
+      return res.status(500).json({ script: "Erreur : La clé GEMINI_API_KEY n'est pas configurée dans Vercel." });
     }
 
     const systemInstruction = `Tu es un Ghostwriter & Expert en Algorithmes pour formats courts (TikTok, Reels, Shorts).
@@ -14,10 +26,9 @@ Rédige une fiche de tournage courte sous forme de liste fluide :
 Garde un ton direct, dynamique et percutant.`;
 
     const userPrompt = `Génère une fiche de tournage pour :
-- Sujet : ${sujet}
-- Style d'accroche (Hook) : ${hookAngle}`;
+- Sujet : ${sujet || 'Sujet par défaut'}
+- Style d'accroche (Hook) : ${hookAngle || 'mythe'}`;
 
-    // Appel à l'API Gemini 1.5 Flash (v1beta)
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -30,16 +41,14 @@ Garde un ton direct, dynamique et percutant.`;
     const data = await response.json();
 
     if (data.error) {
-      return new Response(JSON.stringify({ script: `Erreur Google AI Studio : ${data.error.message}` }), { status: 200 });
+      return res.status(500).json({ script: `Erreur API Gemini : ${data.error.message}` });
     }
 
-    const scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucun script n'a pu être généré.";
+    const scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucun script n'a été généré.";
 
-    return new Response(JSON.stringify({ script: scriptText }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return res.status(200).json({ script: scriptText });
 
   } catch (err) {
-    return new Response(JSON.stringify({ script: "Erreur serveur : " + err.message }), { status: 500 });
+    return res.status(500).json({ script: "Erreur serveur : " + err.message });
   }
 }
