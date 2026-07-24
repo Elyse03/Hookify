@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // Gestion du CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -23,18 +22,23 @@ export default async function handler(req, res) {
     const systemInstruction = `Tu es un Ghostwriter & Expert en Algorithmes pour formats courts (TikTok, Reels, Shorts).
 Rédige une fiche de tournage courte sous forme de liste fluide :
 ⏱️ [Timing] - 🗣️ Texte à dire - 🎥 Visuel & B-roll.
-Garde un ton direct, dynamique et percutant.`;
+Garde un ton direct, dynamique et percutant. Fais très court (< 120 mots).`;
 
     const userPrompt = `Génère une fiche de tournage pour :
 - Sujet : ${sujet || 'Sujet par défaut'}
 - Style d'accroche (Hook) : ${hookAngle || 'mythe'}`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+    // Utilisation de gemini-2.5-flash avec limite de tokens pour économiser
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: userPrompt }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] }
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: {
+          maxOutputTokens: 350, // Limite la longueur pour économiser tes crédits/sous !
+          temperature: 0.7
+        }
       })
     });
 
