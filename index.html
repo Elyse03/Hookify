@@ -23,13 +23,26 @@
     p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
 
     .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .label-row { display: flex; justify-content: space-between; align-items: center; }
     label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-    
+    .badge-limit { font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+
     input, select {
       background: var(--card); border: 1px solid var(--border); color: var(--text);
       padding: 14px; border-radius: 10px; font-size: 0.95rem; outline: none; transition: 0.2s;
     }
     input:focus, select:focus { border-color: var(--accent); }
+
+    .sujet-box { display: flex; gap: 8px; }
+    .sujet-box select { flex: 1; }
+    
+    .btn-regen {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 0 14px; border-radius: 10px; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: 0.2s;
+    }
+    .btn-regen:hover { border-color: var(--accent); }
+    .btn-regen:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .angles-grid { display: flex; flex-direction: column; gap: 8px; }
     .angle-card {
@@ -68,30 +81,42 @@
   <!-- 1. Thématique -->
   <div class="form-group">
     <label>1. Ta Thématique / Niche</label>
-    <select id="thematique" onchange="updateSujets()">
-      <option value="business">Business & E-commerce</option>
-      <option value="sante">Santé, Fitness & Nutrition</option>
-      <option value="astro">Astronomie, Espace & Science</option>
-      <option value="tech">Tech, AI & Outils Web</option>
-      <option value="perso">Développement Personnel & Discipline</option>
+    <select id="thematique" onchange="handleThemeChange()">
+      <option value="business">💼 Business & E-commerce</option>
+      <option value="sante">🏋️ Santé, Fitness & Nutrition</option>
+      <option value="astro">🌌 Astronomie & Science</option>
+      <option value="tech">🤖 Tech, AI & Outils Web</option>
+      <option value="perso">🧠 Développement Personnel</option>
+      <option value="autre">✨ Autre (Personnalisé)</option>
     </select>
+    
+    <!-- Champ texte si 'Autre' est sélectionné -->
+    <input type="text" id="custom-niche" placeholder="Ecris ta niche (ex: Gaming, Mode, Déco...)" style="display: none; margin-top: 4px;">
   </div>
 
-  <!-- 2. Sujet pré-suggéré ou personnalisé -->
+  <!-- 2. Sujet -->
   <div class="form-group">
-    <label>2. Sujet de la vidéo</label>
-    <select id="sujet-select" onchange="syncSujetInput()">
-      <!-- Rempli dynamiquement -->
-    </select>
-    <input type="text" id="sujet-custom" placeholder="Ou tape ton propre sujet personnalisé..." style="margin-top: 4px;">
+    <div class="label-row">
+      <label>2. Sujet de la vidéo</label>
+      <span class="badge-limit" id="limit-badge">Régénérations : 3/3</span>
+    </div>
+    
+    <div class="sujet-box">
+      <select id="sujet-select">
+        <!-- Rempli dynamiquement -->
+      </select>
+      <button class="btn-regen" id="btn-regen" onclick="regenerateIdeas()">🎲 Idées</button>
+    </div>
+    
+    <input type="text" id="sujet-custom" placeholder="Ou tape ton propre sujet..." style="margin-top: 4px;">
   </div>
 
-  <!-- 3. Angle de l'accroche -->
+  <!-- 3. Angle du Hook -->
   <div class="form-group">
     <label>3. Style de l'accroche (Hook)</label>
     <div class="angles-grid">
       <div class="angle-card active" data-value="mythe" onclick="selectAngle(this)">
-        <div class="angle-title">⚡ Idée Reçue / Erreur Fatal</div>
+        <div class="angle-title">⚡ Idée Reçue / Erreur Fatale</div>
         <div class="angle-desc">Attaque une mauvaise habitude que tout le monde fait.</div>
       </div>
       <div class="angle-card" data-value="chiffre" onclick="selectAngle(this)">
@@ -114,42 +139,96 @@
 </div>
 
 <script>
-  const exemplesSujets = {
+  const banqueIdees = {
     business: [
       "Pourquoi 90% des nouveaux e-commerçants échouent en 2026",
       "La seule compétence indispensable pour vivre de son business en ligne",
-      "Comment trouver ses premiers clients sans payer de publicité"
+      "Comment trouver ses premiers clients sans payer de publicité",
+      "L'erreur fatale sur les tarifs qui tue la rentabilité des freelances",
+      "3 petites routines pour doubler tes ventes sans ajouter de produit"
     ],
     sante: [
       "L'erreur n°1 qui t'empêche de perdre du gras au niveau du ventre",
-      "Ce que se passe dans ton corps quand tu coupes le sucre 14 jours",
-      "3 habitudes simples pour doubler ton énergie au réveil"
+      "Ce qui se passe dans ton corps quand tu coupes le sucre 14 jours",
+      "3 habitudes simples pour doubler ton énergie au réveil",
+      "Pourquoi boire 3L d'eau ne suffit pas si tu manques de ceci",
+      "La seule séance de 15 minutes plus efficace qu'1h de cardio"
     ],
     astro: [
       "L'anomalie spatiale terrifiante que la NASA surveille de près",
       "Ce qui se passerait vraiment si la Terre s'arrêtait de tourner",
-      "3 découvertes récentes sur l'univers qui dépassent l'entendement"
+      "3 découvertes récentes sur l'univers qui dépassent l'entendement",
+      "Pourquoi voyager à la vitesse de la lumière est techniquement impossible",
+      "Le mystère de l'énergie noire que la science n'explique toujours pas"
     ],
     tech: [
       "3 outils IA gratuits qui remplacent des logiciels payants",
       "Comment automatiser tes tâches quotidiennes en 10 minutes",
-      "L'erreur de sécurité que tout le monde fait sur son smartphone"
+      "L'erreur de sécurité que tout le monde fait sur son smartphone",
+      "Cet outil gratuit va te faire gagner 2 heures par jour",
+      "Pourquoi les applications générées par IA vont remplacer le dev classique"
     ],
     perso: [
       "La règle des 5 minutes pour stopper la procrastination",
       "Comment organiser tes journées avec un système ultra basique",
-      "Pourquoi vouloir être motivé est le meilleur moyen d'échouer"
+      "Pourquoi vouloir être motivé est le meilleur moyen d'échouer",
+      "L'habitude nocturne qui ruine la productivité de tes matins",
+      "Comment reprogrammer son cerveau pour arrêter de douter de soi"
+    ],
+    autre: [
+      "L'erreur que 99% des gens commettent sans même s'en rendre compte",
+      "Le secret le mieux gardé pour obtenir des résultats 2x plus vite",
+      "Pourquoi tout le monde se trompe complètement sur ce sujet",
+      "3 astuces méconnues que tu devrais commencer à appliquer aujourd'hui",
+      "La méthode ultra simple pour débloquer la situation en 24h"
     ]
   };
 
   let selectedHookAngle = 'mythe';
+  const MAX_REGEN = 3;
 
-  function updateSujets() {
+  function checkLimit() {
+    const today = new Date().toISOString().slice(0, 10);
+    const stored = JSON.parse(localStorage.getItem('hookify_regen') || '{}');
+    
+    if (stored.date !== today) {
+      localStorage.setItem('hookify_regen', JSON.stringify({ date: today, count: 0 }));
+      return 0;
+    }
+    return stored.count;
+  }
+
+  function updateLimitUI() {
+    const count = checkLimit();
+    const remaining = Math.max(0, MAX_REGEN - count);
+    document.getElementById('limit-badge').innerText = `Régénérations : ${remaining}/${MAX_REGEN}`;
+    if (remaining === 0) {
+      document.getElementById('btn-regen').disabled = true;
+    }
+  }
+
+  function handleThemeChange() {
     const theme = document.getElementById('thematique').value;
+    const customNicheInput = document.getElementById('custom-niche');
+    
+    if (theme === 'autre') {
+      customNicheInput.style.display = 'block';
+    } else {
+      customNicheInput.style.display = 'none';
+    }
+    
+    loadIdeas(theme);
+  }
+
+  function loadIdeas(theme) {
     const select = document.getElementById('sujet-select');
     select.innerHTML = '';
     
-    exemplesSujets[theme].forEach(sujet => {
+    const list = banqueIdees[theme] || banqueIdees.autre;
+    // Prendre 3 idées aléatoires
+    const shuffled = [...list].sort(() => 0.5 - Math.random()).slice(0, 3);
+    
+    shuffled.forEach(sujet => {
       const opt = document.createElement('option');
       opt.value = sujet;
       opt.textContent = sujet;
@@ -159,8 +238,19 @@
     document.getElementById('sujet-custom').value = '';
   }
 
-  function syncSujetInput() {
-    document.getElementById('sujet-custom').value = '';
+  function regenerateIdeas() {
+    const count = checkLimit();
+    if (count >= MAX_REGEN) {
+      alert("Tu as atteint ta limite de 3 régénérations d'idées pour aujourd'hui !");
+      return;
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem('hookify_regen', JSON.stringify({ date: today, count: count + 1 }));
+    
+    const theme = document.getElementById('thematique').value;
+    loadIdeas(theme);
+    updateLimitUI();
   }
 
   function selectAngle(el) {
@@ -207,8 +297,9 @@
     alert("Script copié dans le presse-papier ! ✅");
   }
 
-  // Initialisation au chargement
-  updateSujets();
+  // Initialisation
+  handleThemeChange();
+  updateLimitUI();
 </script>
 
 </body>
