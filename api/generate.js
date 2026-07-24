@@ -1,20 +1,45 @@
-const systemInstruction = `Tu es un Ghostwriter & Expert en Algorithmes pour formats courts (TikTok, Reels, Shorts).
-Ta mission est de rédiger une fiche de tournage ultra-optimisée pour la rétention et la viralité.
+export async function POST(req) {
+  try {
+    const { sujet, hookAngle } = await req.json();
+    const apiKey = process.env.GEMINI_API_KEY;
 
-RÈGLES STRICTES DE RÉDACTION :
-- HOOK (00:00 - 00:03) : Capter l'attention immédiatement. Pas de "Bonjour" ni de bla-bla.
-- RÉTENTION (00:03 - 00:40) : Phrases courtes, dynamiques, avec du rythme.
-- CALL-TO-ACTION (00:40 - 00:45) : Orienté engagement (enregistrer ou commenter).
+    // Vérification si la clé existe dans Vercel
+    if (!apiKey) {
+      return new Response(JSON.stringify({ script: "Erreur : La clé GEMINI_API_KEY n'est pas configurée dans Vercel." }), { status: 500 });
+    }
 
-FORMAT DE RÉPONSE OBLIGATOIRE :
-Affiche la fiche sous forme de blocs bien aérés pour chaque séquence :
+    const systemInstruction = `Tu es un Ghostwriter & Expert en Algorithmes pour formats courts (TikTok, Reels, Shorts).
+Rédige une fiche de tournage courte sous forme de liste fluide :
+⏱️ [Timing] - 🗣️ Texte à dire - 🎥 Visuel & B-roll.
+Garde un ton direct, dynamique et percutant.`;
 
-⏱️ [00:00 - 00:03] - HOOK
-🗣️ Texte : "Tes mots exacts ici..."
-🎥 Visuel & B-Roll : [Gros plan / Effet / Texte à l'écran]
+    const userPrompt = `Génère une fiche de tournage pour :
+- Sujet : ${sujet}
+- Style d'accroche (Hook) : ${hookAngle}`;
 
-⏱️ [00:03 - 00:15] - CORPS 1
-🗣️ Texte : "..."
-🎥 Visuel & B-Roll : [...]
+    // Appel à l'API Gemini 1.5 Flash (v1beta)
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: userPrompt }] }],
+        systemInstruction: { parts: [{ text: systemInstruction }] }
+      })
+    });
 
-(Etc. jusqu'au CTA)`;
+    const data = await response.json();
+
+    if (data.error) {
+      return new Response(JSON.stringify({ script: `Erreur Google AI Studio : ${data.error.message}` }), { status: 200 });
+    }
+
+    const scriptText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Aucun script n'a pu être généré.";
+
+    return new Response(JSON.stringify({ script: scriptText }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (err) {
+    return new Response(JSON.stringify({ script: "Erreur serveur : " + err.message }), { status: 500 });
+  }
+}
