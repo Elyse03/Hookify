@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Oukifaï — Fiches de tournage virales</title>
+  <title>Hookify — Fiches de tournage virales</title>
   <style>
     :root {
       --bg: #09090b;
@@ -15,7 +15,7 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); display: flex; justify-content: center; padding: 20px 15px; min-height: 100vh; }
-    .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 24px; }
+    .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 20px; }
     
     header { text-align: center; margin-top: 10px; }
     h1 { font-size: 1.8rem; font-weight: 800; tracking: -0.02em; }
@@ -23,28 +23,30 @@
     p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: 6px; }
 
     .form-group { display: flex; flex-direction: column; gap: 8px; }
-    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    label { font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
     
     input, select {
       background: var(--card); border: 1px solid var(--border); color: var(--text);
-      padding: 14px; border-radius: 10px; font-size: 1rem; outline: none; transition: 0.2s;
+      padding: 14px; border-radius: 10px; font-size: 0.95rem; outline: none; transition: 0.2s;
     }
     input:focus, select:focus { border-color: var(--accent); }
 
-    .options-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    .option-btn {
-      background: var(--card); border: 1px solid var(--border); color: var(--text-muted);
-      padding: 12px 6px; border-radius: 10px; font-size: 0.75rem; font-weight: 600;
-      text-align: center; cursor: pointer; transition: 0.2s;
+    .angles-grid { display: flex; flex-direction: column; gap: 8px; }
+    .angle-card {
+      background: var(--card); border: 1px solid var(--border); color: var(--text);
+      padding: 12px 14px; border-radius: 10px; cursor: pointer; transition: 0.2s;
+      display: flex; flex-direction: column; gap: 2px;
     }
-    .option-btn.active { border-color: var(--accent); color: var(--text); background: #f43f5e15; }
+    .angle-card.active { border-color: var(--accent); background: #f43f5e10; }
+    .angle-title { font-size: 0.9rem; font-weight: 700; }
+    .angle-desc { font-size: 0.75rem; color: var(--text-muted); }
 
     button.btn-primary {
       background: var(--accent); color: #fff; border: none; padding: 16px;
       border-radius: 10px; font-size: 1rem; font-weight: 700; cursor: pointer;
-      margin-top: 8px; transition: opacity 0.2s;
+      margin-top: 6px; transition: opacity 0.2s;
     }
-    button.btn-primary:active { opacity: 0.8; }
+    button.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
     #result-area { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 10px; }
     .script-content { white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5; color: #e4e4e7; }
@@ -59,34 +61,51 @@
 
 <div class="container">
   <header>
-    <h1>Ouki<span>faï</span></h1>
-    <p class="subtitle">Scripts courts & viraux en 30 secondes</p>
+    <h1>Hooki<span>fy</span></h1>
+    <p class="subtitle">Générateur de fiches de tournage virales</p>
   </header>
 
+  <!-- 1. Thématique -->
   <div class="form-group">
-    <label>1. Sujet de ta vidéo</label>
-    <input type="text" id="sujet" placeholder="Ex: L'erreur ultime en e-commerce..." required>
-  </div>
-
-  <div class="form-group">
-    <label>2. Angle du Hook</label>
-    <div class="options-grid">
-      <div class="option-btn active" data-value="contrariant">Contrariant</div>
-      <div class="option-btn" data-value="chiffre">Chiffre Choc</div>
-      <div class="option-btn" data-value="fomo">Secret / FOMO</div>
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label>3. Ton de voix</label>
-    <select id="ton">
-      <option value="Direct & Cash">Direct & Cash</option>
-      <option value="Inspirant">Inspirant & Captivant</option>
-      <option value="Éducatif">Pédagoge & Clair</option>
+    <label>1. Ta Thématique / Niche</label>
+    <select id="thematique" onchange="updateSujets()">
+      <option value="business">Business & E-commerce</option>
+      <option value="sante">Santé, Fitness & Nutrition</option>
+      <option value="astro">Astronomie, Espace & Science</option>
+      <option value="tech">Tech, AI & Outils Web</option>
+      <option value="perso">Développement Personnel & Discipline</option>
     </select>
   </div>
 
-  <button class="btn-primary" id="generate-btn" onclick="generateScript()">⚡ GÉNÉRER MON SCRIPT</button>
+  <!-- 2. Sujet pré-suggéré ou personnalisé -->
+  <div class="form-group">
+    <label>2. Sujet de la vidéo</label>
+    <select id="sujet-select" onchange="syncSujetInput()">
+      <!-- Rempli dynamiquement -->
+    </select>
+    <input type="text" id="sujet-custom" placeholder="Ou tape ton propre sujet personnalisé..." style="margin-top: 4px;">
+  </div>
+
+  <!-- 3. Angle de l'accroche -->
+  <div class="form-group">
+    <label>3. Style de l'accroche (Hook)</label>
+    <div class="angles-grid">
+      <div class="angle-card active" data-value="mythe" onclick="selectAngle(this)">
+        <div class="angle-title">⚡ Idée Reçue / Erreur Fatal</div>
+        <div class="angle-desc">Attaque une mauvaise habitude que tout le monde fait.</div>
+      </div>
+      <div class="angle-card" data-value="chiffre" onclick="selectAngle(this)">
+        <div class="angle-title">📊 Preuve & Chiffres Chocs</div>
+        <div class="angle-desc">Accroche avec un résultat concret ou un chiffre impressionnant.</div>
+      </div>
+      <div class="angle-card" data-value="secret" onclick="selectAngle(this)">
+        <div class="angle-title">🤫 Méthode Secrète / Révélation</div>
+        <div class="angle-desc">Donne l'impression de découvrir une astuce méconnue.</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="generate-btn" onclick="generateScript()">⚡ GÉNÉRER LA FICHE</button>
 
   <div id="result-area">
     <div class="script-content" id="script-output"></div>
@@ -95,24 +114,71 @@
 </div>
 
 <script>
-  let selectedHook = 'contrariant';
+  const exemplesSujets = {
+    business: [
+      "Pourquoi 90% des nouveaux e-commerçants échouent en 2026",
+      "La seule compétence indispensable pour vivre de son business en ligne",
+      "Comment trouver ses premiers clients sans payer de publicité"
+    ],
+    sante: [
+      "L'erreur n°1 qui t'empêche de perdre du gras au niveau du ventre",
+      "Ce que se passe dans ton corps quand tu coupes le sucre 14 jours",
+      "3 habitudes simples pour doubler ton énergie au réveil"
+    ],
+    astro: [
+      "L'anomalie spatiale terrifiante que la NASA surveille de près",
+      "Ce qui se passerait vraiment si la Terre s'arrêtait de tourner",
+      "3 découvertes récentes sur l'univers qui dépassent l'entendement"
+    ],
+    tech: [
+      "3 outils IA gratuits qui remplacent des logiciels payants",
+      "Comment automatiser tes tâches quotidiennes en 10 minutes",
+      "L'erreur de sécurité que tout le monde fait sur son smartphone"
+    ],
+    perso: [
+      "La règle des 5 minutes pour stopper la procrastination",
+      "Comment organiser tes journées avec un système ultra basique",
+      "Pourquoi vouloir être motivé est le meilleur moyen d'échouer"
+    ]
+  };
 
-  document.querySelectorAll('.option-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedHook = btn.dataset.value;
+  let selectedHookAngle = 'mythe';
+
+  function updateSujets() {
+    const theme = document.getElementById('thematique').value;
+    const select = document.getElementById('sujet-select');
+    select.innerHTML = '';
+    
+    exemplesSujets[theme].forEach(sujet => {
+      const opt = document.createElement('option');
+      opt.value = sujet;
+      opt.textContent = sujet;
+      select.appendChild(opt);
     });
-  });
+    
+    document.getElementById('sujet-custom').value = '';
+  }
+
+  function syncSujetInput() {
+    document.getElementById('sujet-custom').value = '';
+  }
+
+  function selectAngle(el) {
+    document.querySelectorAll('.angle-card').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    selectedHookAngle = el.dataset.value;
+  }
 
   async function generateScript() {
-    const sujet = document.getElementById('sujet').value;
-    const ton = document.getElementById('ton').value;
+    const customSujet = document.getElementById('sujet-custom').value;
+    const selectSujet = document.getElementById('sujet-select').value;
+    const sujetFinal = customSujet.trim() !== '' ? customSujet : selectSujet;
+    
     const btn = document.getElementById('generate-btn');
     const resultArea = document.getElementById('result-area');
     const scriptOutput = document.getElementById('script-output');
 
-    if (!sujet) return alert("Renseigne au moins le sujet de ta vidéo !");
+    if (!sujetFinal) return alert("Sélectionne ou entre un sujet !");
 
     btn.innerText = "Génération en cours...";
     btn.disabled = true;
@@ -121,7 +187,7 @@
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sujet, hookAngle: selectedHook, ton })
+        body: JSON.stringify({ sujet: sujetFinal, hookAngle: selectedHookAngle, ton: "Direct & Cash" })
       });
 
       const data = await res.json();
@@ -130,7 +196,7 @@
     } catch (e) {
       alert("Une erreur est survenue lors de la génération.");
     } finally {
-      btn.innerText = "⚡ GÉNÉRER MON SCRIPT";
+      btn.innerText = "⚡ GÉNÉRER LA FICHE";
       btn.disabled = false;
     }
   }
@@ -140,6 +206,9 @@
     navigator.clipboard.writeText(text);
     alert("Script copié dans le presse-papier ! ✅");
   }
+
+  // Initialisation au chargement
+  updateSujets();
 </script>
 
 </body>
